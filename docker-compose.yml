@@ -1,0 +1,53 @@
+version: '2'
+services:
+  elasticsearch1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.4.0
+    container_name: elasticsearch1
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1g
+    volumes:
+      - /docker-volumes/esdata1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+  elasticsearch2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.4.0
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=elasticsearch1"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1g
+    volumes:
+      - /docker-volumes/esdata2:/usr/share/elasticsearch/data
+  kibana:
+    image: docker.elastic.co/kibana/kibana:5.4.0
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch1:9200
+    ports:
+      - 5601:5601
+  app:
+    image: vishnuratheesh/dev-env-dockerfile
+    environment:
+      - DB_HOST=172.20.0.1
+      - DB_PORT=1521
+      - DB_NAME=xe
+      - DB_USER=dev
+      - DB_PASS=gale43$$#
+    ports:
+      - "8000:8000"
+    volumes:
+       - .:/application
+    tty: true
+    links:
+      - elasticsearch1
